@@ -1,12 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
-
-import React from 'react';
+import React, { Component } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,15 +6,10 @@ import {
   View,
   Text,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import Video from 'react-native-video';
 import {
   RTCPeerConnection,
   RTCIceCandidate,
@@ -36,143 +23,83 @@ const configuration = { "iceServers": [{ "url": "stun:stun.l.google.com:19302" }
 const pc = new RTCPeerConnection(configuration);
 
 let isFront = true;
-mediaDevices.enumerateDevices().then(sourceInfos => {
-  console.log(sourceInfos);
-  let videoSourceId;
-  for (let i = 0; i < sourceInfos.length; i++) {
-    const sourceInfo = sourceInfos[i];
-    if (sourceInfo.kind == "videoinput" && sourceInfo.facing == (isFront ? "front" : "back")) {
-      videoSourceId = sourceInfo.deviceId;
-    }
+
+class App extends Component {
+  state = {
+    stream: ''
   }
-  mediaDevices.getUserMedia({
-    audio: true,
-    video: {
-      mandatory: {
-        minWidth: 500, // Provide your own width, height and frame rate here
-        minHeight: 300,
-        minFrameRate: 30
-      },
-      facingMode: (isFront ? "user" : "environment"),
-      optional: (videoSourceId ? [{ sourceId: videoSourceId }] : [])
-    }
-  })
-    .then(stream => {
-      // Got stream!
+  getUserMedia = () => {
+    mediaDevices.enumerateDevices().then(sourceInfos => {
+      let videoSourceId;
+      for (let i = 0; i < sourceInfos.length; i++) {
+        const sourceInfo = sourceInfos[i];
+        if (sourceInfo.kind == "videoinput" && sourceInfo.facing == (isFront ? "front" : "back")) {
+          videoSourceId = sourceInfo.deviceId;
+        }
+      }
+      mediaDevices.getUserMedia({
+        audio: true,
+        video: {
+          mandatory: {
+            minWidth: 500, // Provide your own width, height and frame rate here
+            minHeight: 300,
+            minFrameRate: 30
+          },
+          facingMode: (isFront ? "user" : "environment"),
+          optional: (videoSourceId ? [{ sourceId: videoSourceId }] : [])
+        }
+      })
+        .then(stream => {
+          this.setState({ stream })
+        })
+        .catch(error => {
+          // Log error
+        });
     })
-    .catch(error => {
-      // Log error
-    });
+  }
 
+  getDisplayMedia = () => {
 
-  mediaDevices.getDisplayMedia({
-    audio: true,
-    video: true
-  })
-    .then(stream => {
-      console.log(stream, 'kbkjbkj')
+    mediaDevices.getDisplayMedia({
+      audio: true,
+      video: true
     })
-    .catch(error => {
-      // Log error
-    });
-});
+      .then(stream => {
+        this.setState({ stream })
+      })
+      .catch(error => {
+        // Log error
+      });
 
+  }
+  render() {
+    console.log(this.state.stream)
+    return (
+      <View>
+        <Video resizeMode='cover' source={{ uri: this.state.stream }}   // Can be a URL or a local file.
 
+          style={styles.backgroundVideo} />
+        {/* <View style={{ flexDirection: 'row', width: 350, justifyContent: 'flex-end', marginTop: 20 }}>
+          <Video resizeMode='cover' source={{ uri: 'http://clips.vorwaerts-gmbh.de/VfE_html5.mp4' }}   // Can be a URL or a local file.
 
-pc.createOffer().then(desc => {
-  pc.setLocalDescription(desc).then(() => {
-    // Send pc.localDescription to peer
-  });
-});
+            style={styles.backgroundVideoTwo} />
+        </View> */}
+        <TouchableOpacity onPress={() => this.getUserMedia()}><View style={{ width: 30, height: 30, backgroundColor: 'green', marginTop: 30, marginLeft: 30 }}></View></TouchableOpacity>
+        <TouchableOpacity onPress={() => this.getDisplayMedia()}><View style={{ width: 30, height: 30, backgroundColor: 'blue', marginTop: 30, marginLeft: 30 }}></View></TouchableOpacity>
 
-pc.onicecandidate = function (event) {
-  // send event.candidate to peer
-};
-const App: () => React$Node = () => {
-  return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
-  );
-};
+      </View>
+    )
+  }
+}
+var styles = StyleSheet.create({
+  backgroundVideo: {
+    width: 500,
+    height: 400
+  },
+  backgroundVideoTwo: {
+    width: 100,
+    height: 120,
 
-const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
-  },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
-    backgroundColor: Colors.white,
-  },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
   },
 });
-
-export default App;
+export default App
